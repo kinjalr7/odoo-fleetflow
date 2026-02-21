@@ -52,6 +52,7 @@ import models
 from auth import hash_password, require_roles, get_current_user
 from websocket_manager import manager
 from routers import auth_router, vehicles_router, drivers_router, trips_router, maintenance_router, reports_router, fuel_router
+from routers.auth_router import users_router
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -74,6 +75,7 @@ app.add_middleware(
 
 # Register all routers
 app.include_router(auth_router.router)
+app.include_router(users_router)
 app.include_router(vehicles_router.router)
 app.include_router(drivers_router.router)
 app.include_router(trips_router.router)

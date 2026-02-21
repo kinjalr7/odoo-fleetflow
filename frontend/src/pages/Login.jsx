@@ -20,6 +20,7 @@ export default function Login({ onLogin }) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('role', data.role);
                 localStorage.setItem('userName', data.name);
+                localStorage.setItem('userEmail', data.email);
                 onLogin();
                 navigate('/dashboard');
             } else {
