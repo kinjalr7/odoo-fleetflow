@@ -171,28 +171,36 @@ def seed_database(db: Session = Depends(get_db)):
 
     # ---- USERS ----
     users_data = [
-        {"name": "Admin Flow", "email": "admin@fleetflow.com", "password": "admin123", "role": "Fleet Manager"},
+        {"name": "Admin Flow",     "email": "admin@fleetflow.com",      "password": "admin123", "role": "Fleet Manager"},
         {"name": "Dispatcher Dan", "email": "dispatcher@fleetflow.com", "password": "admin123", "role": "Dispatcher"},
-        {"name": "Safety Sam", "email": "safety@fleetflow.com", "password": "admin123", "role": "Safety Officer"},
-        {"name": "Finance Fay", "email": "finance@fleetflow.com", "password": "admin123", "role": "Financial Analyst"},
+        {"name": "Safety Sam",     "email": "safety@fleetflow.com",     "password": "admin123", "role": "Safety Officer"},
+        {"name": "Finance Fay",    "email": "finance@fleetflow.com",    "password": "admin123", "role": "Financial Analyst"},
     ]
     for u in users_data:
-        user = models.User(
+        db.add(models.User(
             name=u["name"],
             email=u["email"],
             hashed_password=hash_password(u["password"]),
             role=u["role"],
             is_active=True,
-        )
-        db.add(user)
+        ))
 
-    # ---- VEHICLES ----
+    # ---- VEHICLES ---- (variety: available, on_trip, in_shop, retired, different capacities)
+    today = datetime.date.today()
     vehicles_data = [
-        {"plate_number": "XY98-12A", "vehicle_type": "Semi-Truck", "max_weight": 15000, "mileage": 45210, "status": "available"},
-        {"plate_number": "AB12-34C", "vehicle_type": "Delivery Van", "max_weight": 3500, "mileage": 12800, "status": "on_trip"},
-        {"plate_number": "CD56-78E", "vehicle_type": "Cargo Bike", "max_weight": 100, "mileage": 4500, "status": "in_shop"},
-        {"plate_number": "MN99-11F", "vehicle_type": "Heavy Duty Truck", "max_weight": 25000, "mileage": 78200, "status": "available"},
-        {"plate_number": "PQ77-55G", "vehicle_type": "Sprinter Van", "max_weight": 2000, "mileage": 21000, "status": "available"},
+        # Available
+        {"plate_number": "XY98-12A", "vehicle_type": "Semi-Truck",      "max_weight": 15000, "mileage": 45210, "status": "available"},
+        {"plate_number": "MN99-11F", "vehicle_type": "Heavy Duty Truck","max_weight": 25000, "mileage": 78200, "status": "available"},
+        {"plate_number": "PQ77-55G", "vehicle_type": "Sprinter Van",    "max_weight": 2000,  "mileage": 21000, "status": "available"},
+        {"plate_number": "FG33-77K", "vehicle_type": "Cargo Van",       "max_weight": 1200,  "mileage": 9800,  "status": "available"},
+        # On Trip
+        {"plate_number": "AB12-34C", "vehicle_type": "Delivery Van",    "max_weight": 3500,  "mileage": 12800, "status": "on_trip"},
+        {"plate_number": "TZ44-88L", "vehicle_type": "Flatbed Truck",   "max_weight": 10000, "mileage": 62100, "status": "on_trip"},
+        # In Shop
+        {"plate_number": "CD56-78E", "vehicle_type": "Cargo Bike",      "max_weight": 100,   "mileage": 4500,  "status": "in_shop"},
+        {"plate_number": "HJ22-66M", "vehicle_type": "Refrigerator Van","max_weight": 5000,  "mileage": 33400, "status": "in_shop"},
+        # Retired
+        {"plate_number": "OL11-00R", "vehicle_type": "Mini Truck",      "max_weight": 500,   "mileage": 210000,"status": "retired"},
     ]
     vehicles = []
     for v in vehicles_data:
@@ -200,14 +208,26 @@ def seed_database(db: Session = Depends(get_db)):
         db.add(vehicle)
         vehicles.append(vehicle)
 
-    db.flush()  # flush to get IDs
+    db.flush()
 
-    # ---- DRIVERS ----
+    # ---- DRIVERS ---- (variety: high score, expiring license, suspended, available)
+    expiry_soon = today + datetime.timedelta(days=22)   # within 30-day warning window
     drivers_data = [
-        {"name": "Robert Fox", "license_number": "LIC-9021", "license_expiry_date": datetime.date(2027, 12, 15), "safety_score": 94, "duty_status": "on", "avatar_url": "https://i.pravatar.cc/150?u=1"},
-        {"name": "Cody Fisher", "license_number": "LIC-1102", "license_expiry_date": datetime.date(2024, 1, 10), "safety_score": 42, "duty_status": "suspended", "avatar_url": "https://i.pravatar.cc/150?u=2"},
-        {"name": "Alice Johnson", "license_number": "LIC-3301", "license_expiry_date": datetime.date(2028, 6, 1), "safety_score": 88, "duty_status": "on", "avatar_url": "https://i.pravatar.cc/150?u=3"},
-        {"name": "Marcus Rivera", "license_number": "LIC-4421", "license_expiry_date": datetime.date(2026, 3, 20), "safety_score": 76, "duty_status": "off", "avatar_url": "https://i.pravatar.cc/150?u=4"},
+        # High safety score (90+)
+        {"name": "Robert Fox",    "license_number": "LIC-9021", "license_expiry_date": datetime.date(2027, 12, 15), "safety_score": 97, "duty_status": "on",        "avatar_url": "https://i.pravatar.cc/150?u=11"},
+        {"name": "Priya Sharma",  "license_number": "LIC-5512", "license_expiry_date": datetime.date(2028, 4, 10),  "safety_score": 92, "duty_status": "on",        "avatar_url": "https://i.pravatar.cc/150?u=12"},
+        # Good scores, available
+        {"name": "Alice Johnson", "license_number": "LIC-3301", "license_expiry_date": datetime.date(2028, 6, 1),  "safety_score": 88, "duty_status": "on",        "avatar_url": "https://i.pravatar.cc/150?u=13"},
+        {"name": "Marcus Rivera", "license_number": "LIC-4421", "license_expiry_date": datetime.date(2026, 9, 20), "safety_score": 76, "duty_status": "off",       "avatar_url": "https://i.pravatar.cc/150?u=14"},
+        {"name": "James Okonkwo", "license_number": "LIC-7734", "license_expiry_date": datetime.date(2027, 3, 5),  "safety_score": 81, "duty_status": "on",        "avatar_url": "https://i.pravatar.cc/150?u=15"},
+        # License expiring within 30 days
+        {"name": "Sarah Nguyen",  "license_number": "LIC-8823", "license_expiry_date": expiry_soon,                "safety_score": 73, "duty_status": "on",        "avatar_url": "https://i.pravatar.cc/150?u=16"},
+        # Suspended driver
+        {"name": "Cody Fisher",   "license_number": "LIC-1102", "license_expiry_date": datetime.date(2024, 1, 10), "safety_score": 42, "duty_status": "suspended", "avatar_url": "https://i.pravatar.cc/150?u=17"},
+        # Another suspended / non-compliant
+        {"name": "Leo Tran",      "license_number": "LIC-2290", "license_expiry_date": datetime.date(2023, 7, 30), "safety_score": 35, "duty_status": "suspended", "avatar_url": "https://i.pravatar.cc/150?u=18"},
+        # Off-duty but clean record
+        {"name": "Mariam Yusuf",  "license_number": "LIC-6677", "license_expiry_date": datetime.date(2029, 11, 1), "safety_score": 95, "duty_status": "off",       "avatar_url": "https://i.pravatar.cc/150?u=19"},
     ]
     drivers = []
     for d in drivers_data:
@@ -219,9 +239,13 @@ def seed_database(db: Session = Depends(get_db)):
 
     # ---- TRIPS ----
     trips_data = [
-        {"vehicle": 0, "driver": 0, "destination": "Chicago, IL → Houston, TX", "cargo_weight": 12000, "status": "sent", "start": datetime.datetime.utcnow() - datetime.timedelta(hours=3)},
-        {"vehicle": 1, "driver": 2, "destination": "Milwaukee, WI → Detroit, MI", "cargo_weight": 2500, "status": "done", "start": datetime.datetime.utcnow() - datetime.timedelta(days=1), "end": datetime.datetime.utcnow() - datetime.timedelta(hours=6)},
-        {"vehicle": 3, "driver": 0, "destination": "Dallas, TX → Denver, CO", "cargo_weight": 18000, "status": "draft"},
+        {"vehicle": 0, "driver": 0, "destination": "Chicago, IL → Houston, TX",      "cargo_weight": 12000, "status": "sent",     "start": datetime.datetime.utcnow() - datetime.timedelta(hours=3)},
+        {"vehicle": 1, "driver": 2, "destination": "Milwaukee, WI → Detroit, MI",    "cargo_weight": 22000, "status": "done",     "start": datetime.datetime.utcnow() - datetime.timedelta(days=1), "end": datetime.datetime.utcnow() - datetime.timedelta(hours=6)},
+        {"vehicle": 3, "driver": 4, "destination": "Dallas, TX → Denver, CO",        "cargo_weight": 1100,  "status": "draft"},
+        {"vehicle": 4, "driver": 0, "destination": "New York, NY → Boston, MA",      "cargo_weight": 3200,  "status": "sent",     "start": datetime.datetime.utcnow() - datetime.timedelta(hours=1)},
+        {"vehicle": 5, "driver": 2, "destination": "Los Angeles, CA → San Jose, CA", "cargo_weight": 8000,  "status": "sent",     "start": datetime.datetime.utcnow() - datetime.timedelta(hours=5)},
+        {"vehicle": 0, "driver": 1, "destination": "Phoenix, AZ → Las Vegas, NV",    "cargo_weight": 900,   "status": "done",     "start": datetime.datetime.utcnow() - datetime.timedelta(days=2), "end": datetime.datetime.utcnow() - datetime.timedelta(days=1, hours=18)},
+        {"vehicle": 2, "driver": 4, "destination": "Seattle, WA → Portland, OR",     "cargo_weight": 1800,  "status": "canceled"},
     ]
     trips = []
     for td in trips_data:
@@ -241,35 +265,46 @@ def seed_database(db: Session = Depends(get_db)):
 
     # ---- MAINTENANCE LOGS ----
     maintenance_data = [
-        {"vehicle": 2, "description": "Hydraulic brake system failure — full replacement needed", "cost": 2840.0},
-        {"vehicle": 1, "description": "Routine oil change and filter replacement", "cost": 320.0},
+        {"vehicle": 6, "description": "Hydraulic brake system failure — full replacement needed", "cost": 2840.0},
+        {"vehicle": 7, "description": "Refrigeration compressor overhaul",                        "cost": 4200.0},
+        {"vehicle": 4, "description": "Routine oil change and filter replacement",                 "cost": 320.0},
+        {"vehicle": 1, "description": "Tyre rotation and wheel alignment",                         "cost": 480.0},
     ]
     for m in maintenance_data:
-        log = models.MaintenanceLog(
+        db.add(models.MaintenanceLog(
             vehicle_id=vehicles[m["vehicle"]].id,
             description=m["description"],
             cost=m["cost"],
-        )
-        db.add(log)
+        ))
 
     # ---- FUEL LOGS ----
-    if len(trips) >= 2 and trips[1].id:
-        fuel = models.FuelLog(
-            trip_id=trips[1].id,
-            fuel_used=185.0,
-            fuel_cost=325.50,
-        )
-        db.add(fuel)
+    fuel_entries = [
+        {"trip_idx": 1, "fuel_used": 185.0, "fuel_cost": 325.50},
+        {"trip_idx": 4, "fuel_used": 210.0, "fuel_cost": 367.80},
+        {"trip_idx": 5, "fuel_used": 95.0,  "fuel_cost": 166.25},
+    ]
+    for fe in fuel_entries:
+        if fe["trip_idx"] < len(trips):
+            db.add(models.FuelLog(
+                trip_id=trips[fe["trip_idx"]].id,
+                fuel_used=fe["fuel_used"],
+                fuel_cost=fe["fuel_cost"],
+            ))
 
     db.commit()
     return {
-        "msg": "Database seeded successfully!",
+        "msg": "Database seeded successfully with rich realistic demo data!",
         "accounts": [
-            {"email": "admin@fleetflow.com", "password": "admin123", "role": "Fleet Manager"},
+            {"email": "admin@fleetflow.com",      "password": "admin123", "role": "Fleet Manager"},
             {"email": "dispatcher@fleetflow.com", "password": "admin123", "role": "Dispatcher"},
-            {"email": "safety@fleetflow.com", "password": "admin123", "role": "Safety Officer"},
-            {"email": "finance@fleetflow.com", "password": "admin123", "role": "Financial Analyst"},
-        ]
+            {"email": "safety@fleetflow.com",     "password": "admin123", "role": "Safety Officer"},
+            {"email": "finance@fleetflow.com",    "password": "admin123", "role": "Financial Analyst"},
+        ],
+        "summary": {
+            "vehicles": len(vehicles_data),
+            "drivers":  len(drivers_data),
+            "trips":    len(trips_data),
+        },
     }
 
 

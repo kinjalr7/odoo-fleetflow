@@ -11,6 +11,27 @@ from websocket_manager import manager
 router = APIRouter(prefix="/api/vehicles", tags=["Vehicles"])
 
 
+def build_stats(db: Session) -> dict:
+    return {
+        "active_vehicles": db.query(models.Vehicle).filter(
+            models.Vehicle.status.in_(["available", "on_trip"])
+        ).count(),
+        "maintenance_alerts": db.query(models.Vehicle).filter(
+            models.Vehicle.status == "in_shop"
+        ).count(),
+        "idle_vehicles": db.query(models.Vehicle).filter(
+            models.Vehicle.status == "available"
+        ).count(),
+        "pending_shipments": db.query(models.Trip).filter(
+            models.Trip.status == "draft"
+        ).count(),
+        "total_drivers": db.query(models.Driver).count(),
+        "suspended_drivers": db.query(models.Driver).filter(
+            models.Driver.duty_status == "suspended"
+        ).count(),
+    }
+
+
 def vehicle_to_dict(v: models.Vehicle) -> dict:
     return {
         "id": v.id,
@@ -52,7 +73,7 @@ async def create_vehicle(
     db.refresh(vehicle)
 
     await manager.broadcast("vehicleCreated", vehicle_to_dict(vehicle))
-    await manager.broadcast("dashboardUpdate", {})
+    await manager.broadcast("dashboardUpdate", build_stats(db))
     return vehicle
 
 
@@ -74,7 +95,7 @@ async def update_vehicle(
     db.refresh(vehicle)
 
     await manager.broadcast("vehicleStatusUpdated", vehicle_to_dict(vehicle))
-    await manager.broadcast("dashboardUpdate", {})
+    await manager.broadcast("dashboardUpdate", build_stats(db))
     return vehicle
 
 
@@ -92,5 +113,5 @@ async def delete_vehicle(
     vehicle.status = "retired"
     db.commit()
 
-    await manager.broadcast("dashboardUpdate", {})
+    await manager.broadcast("dashboardUpdate", build_stats(db))
     return None

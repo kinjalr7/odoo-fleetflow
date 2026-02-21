@@ -11,6 +11,27 @@ from websocket_manager import manager
 router = APIRouter(prefix="/api/drivers", tags=["Drivers"])
 
 
+def build_stats(db: Session) -> dict:
+    return {
+        "active_vehicles": db.query(models.Vehicle).filter(
+            models.Vehicle.status.in_(["available", "on_trip"])
+        ).count(),
+        "maintenance_alerts": db.query(models.Vehicle).filter(
+            models.Vehicle.status == "in_shop"
+        ).count(),
+        "idle_vehicles": db.query(models.Vehicle).filter(
+            models.Vehicle.status == "available"
+        ).count(),
+        "pending_shipments": db.query(models.Trip).filter(
+            models.Trip.status == "draft"
+        ).count(),
+        "total_drivers": db.query(models.Driver).count(),
+        "suspended_drivers": db.query(models.Driver).filter(
+            models.Driver.duty_status == "suspended"
+        ).count(),
+    }
+
+
 def driver_to_dict(d: models.Driver) -> dict:
     return {
         "id": d.id,
@@ -68,7 +89,7 @@ async def create_driver(
     db.commit()
     db.refresh(driver)
 
-    await manager.broadcast("dashboardUpdate", {})
+    await manager.broadcast("dashboardUpdate", build_stats(db))
     return driver
 
 
@@ -89,7 +110,7 @@ async def update_driver(
     db.commit()
     db.refresh(driver)
 
-    await manager.broadcast("dashboardUpdate", {})
+    await manager.broadcast("dashboardUpdate", build_stats(db))
     return driver
 
 
@@ -105,4 +126,5 @@ async def delete_driver(
 
     driver.duty_status = "suspended"
     db.commit()
+    await manager.broadcast("dashboardUpdate", build_stats(db))
     return None
